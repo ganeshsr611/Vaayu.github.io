@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirCast - Weather & Air Quality Forecasting</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin="">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <div class="logo">
+                    <h1>🌬️ Vaayu </h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav__item" data-section="dashboard">Dashboard</button>
+                    <button class="nav__item" data-section="forecast">Forecast</button>
+                    <button class="nav__item" data-section="map">Map</button>
+                    <button class="nav__item" data-section="recommendations">Health</button>
+                    <button class="theme-toggle btn btn--outline btn--sm" id="themeToggle">🌙</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Authentication Modal -->
+    <div class="modal modal--auth hidden" id="authModal">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h2 id="authTitle">Welcome to Vaayu</h2>
+                <button class="modal__close" id="closeAuth">&times;</button>
+            </div>
+            <div class="modal__body">
+                <form id="authForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="form-control" required>
+                    </div>
+                    <div class="form-group" id="nameGroup" style="display: none;">
+                        <label class="form-label" for="name">Full Name</label>
+                        <input type="text" id="name" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width" id="authSubmit">Sign In</button>
+                </form>
+                <div class="auth-switch">
+                    <p id="authSwitchText">Don't have an account? <button type="button" class="auth-switch-btn" id="authSwitchBtn">Sign Up</button></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Profile Modal -->
+    <div class="modal modal--health hidden" id="healthModal">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content modal__content--large">
+            <div class="modal__header">
+                <h2>Health Profile Setup</h2>
+                <button class="modal__close" id="closeHealth">&times;</button>
+            </div>
+            <div class="modal__body">
+                <form id="healthForm" class="health-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="age">Age</label>
+                            <input type="number" id="age" class="form-control" min="1" max="120" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="gender">Gender</label>
+                            <select id="gender" class="form-control" required>
+                                <option value="">Select...</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="weight">Weight (lbs)</label>
+                            <input type="number" id="weight" class="form-control" min="50" max="500">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="height">Height (inches)</label>
+                            <input type="number" id="height" class="form-control" min="36" max="96">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pre-existing Conditions</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="asthma"> Asthma
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="copd"> COPD
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="heart"> Heart Disease
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="diabetes"> Diabetes
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="pregnancy"> Pregnancy
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="activityLevel">Activity Level</label>
+                        <select id="activityLevel" class="form-control" required>
+                            <option value="">Select...</option>
+                            <option value="sedentary">Sedentary (little/no exercise)</option>
+                            <option value="light">Light (exercise 1-3 days/week)</option>
+                            <option value="moderate">Moderate (exercise 3-5 days/week)</option>
+                            <option value="active">Active (exercise 6-7 days/week)</option>
+                            <option value="very-active">Very Active (intense exercise daily)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="sensitivity">Air Pollution Sensitivity</label>
+                        <select id="sensitivity" class="form-control" required>
+                            <option value="">Select...</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Save Profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Details Modal -->
+    <div class="modal modal--city-details hidden" id="cityDetailsModal">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content modal__content--large">
+            <div class="modal__header">
+                <h2 id="cityDetailsTitle">City Air Quality Details</h2>
+                <button class="modal__close" id="closeCityDetails">&times;</button>
+            </div>
+            <div class="modal__body">
+                <div class="city-details-content">
+                    <div class="city-aqi-overview">
+                        <div class="aqi-main-display">
+                            <span class="aqi-value-large" id="cityAqiValue">--</span>
+                            <div class="aqi-info">
+                                <span class="aqi-label">AQI</span>
+                                <span class="aqi-category" id="cityAqiCategory">--</span>
+                            </div>
+                        </div>
+                        <div class="dominant-pollutant">
+                            <span>Dominant Pollutant: <strong id="cityDominantPollutant">--</strong></span>
+                        </div>
+                    </div>
+                    <div class="pollutant-details" id="pollutantDetails">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <div class="health-recommendations-modal">
+                        <h4>Health Recommendations</h4>
+                        <div class="recommendation-cards">
+                            <div class="rec-card">
+                                <h5>General Population</h5>
+                                <p id="cityGeneralRec">--</p>
+                            </div>
+                            <div class="rec-card">
+                                <h5>Sensitive Groups</h5>
+                                <p id="citySensitiveRec">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section" id="welcomeSection">
+                <div class="welcome-content">
+                    <h1>Welcome to Vaayu</h1>
+                    <p>Your comprehensive weather and air quality monitoring solution</p>
+                    <button class="btn btn--primary btn--lg" id="getStartedBtn">Get Started</button>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section class="section section--dashboard hidden" id="dashboardSection">
+                <!-- Search Bar -->
+                <div class="search-section">
+                    <div class="search-container">
+                        <input type="text" class="search-input" id="citySearch" placeholder="Search for a city...">
+                        <button class="search-btn btn btn--primary" id="searchBtn">🔍</button>
+                    </div>
+                    <div class="search-suggestions hidden" id="searchSuggestions"></div>
+                </div>
+
+                <!-- Current Conditions -->
+                <div class="current-conditions">
+                    <div class="condition-cards">
+                        <div class="condition-card weather-card">
+                            <div class="card__body">
+                                <div class="weather-icon">🌤️</div>
+                                <div class="weather-info">
+                                    <h3 id="currentTemp">--°F</h3>
+                                    <p id="currentCondition">--</p>
+                                    <p class="location" id="currentLocation">Select a city</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="condition-card aqi-card">
+                            <div class="card__body">
+                                <div class="aqi-info">
+                                    <div class="aqi-main">
+                                        <span class="aqi-value" id="aqiValue">--</span>
+                                        <span class="aqi-label" id="aqiLabel">AQI</span>
+                                    </div>
+                                    <p class="aqi-category" id="aqiCategory">--</p>
+                                    <div class="aqi-bar">
+                                        <div class="aqi-bar-fill" id="aqiBarFill"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="condition-card cigarette-card">
+                            <div class="card__body">
+                                <div class="cigarette-info">
+                                    <div class="cigarette-icon">🚬</div>
+                                    <div class="cigarette-details">
+                                        <h3 id="cigaretteCount">--</h3>
+                                        <p>cigarettes equivalent</p>
+                                        <small>based on current air quality</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather Details -->
+                <div class="weather-details">
+                    <div class="detail-cards">
+                        <div class="detail-card">
+                            <div class="detail-icon">💨</div>
+                            <div class="detail-info">
+                                <span class="detail-value" id="windSpeed">-- mph</span>
+                                <span class="detail-label">Wind Speed</span>
+                            </div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">💧</div>
+                            <div class="detail-info">
+                                <span class="detail-value" id="humidity">--%</span>
+                                <span class="detail-label">Humidity</span>
+                            </div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">🌡️</div>
+                            <div class="detail-info">
+                                <span class="detail-value" id="pressure">-- in</span>
+                                <span class="detail-label">Pressure</span>
+                            </div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">☀️</div>
+                            <div class="detail-info">
+                                <span class="detail-value" id="uvIndex">--</span>
+                                <span class="detail-label">UV Index</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <h3>24-Hour AQI Forecast</h3>
+                        <canvas id="aqiChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forecast Section -->
+            <section class="section section--forecast hidden" id="forecastSection">
+                <h2>7-Day Weather Forecast</h2>
+                <div class="forecast-cards" id="forecastCards">
+                    <!-- Forecast cards will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Map Section -->
+            <section class="section section--map hidden" id="mapSection">
+                <div class="map-header">
+                    <h2>North America Air Quality Map</h2>
+                    <div class="map-controls">
+                        <div class="map-search-container">
+                            <input type="text" class="map-search-input form-control" id="mapCitySearch" placeholder="Search cities on map...">
+                            <button class="map-search-btn btn btn--primary btn--sm" id="mapSearchBtn">🔍</button>
+                        </div>
+                        <button class="btn btn--secondary btn--sm" id="fullScreenBtn">🔍 Full Screen</button>
+                        <button class="btn btn--outline btn--sm" id="currentLocationBtn">📍 My Location</button>
+                    </div>
+                </div>
+                
+                <div class="map-main-container" id="mapMainContainer">
+                    <div class="interactive-map-container">
+                        <div id="mapContainer" class="map-display"></div>
+                        <div class="map-overlay-controls">
+                            <div class="layer-control">
+                                <label class="form-label">Map Style:</label>
+                                <select id="layerSelector" class="form-control">
+                                    <option value="dark">Dark Theme</option>
+                                    <option value="street">Street Map</option>
+                                    <option value="satellite">Satellite</option>
+                                </select>
+                            </div>
+                            <div class="filter-control">
+                                <label class="form-label">Filter AQI:</label>
+                                <select id="aqiFilter" class="form-control">
+                                    <option value="all">Show All</option>
+                                    <option value="unhealthy">Unhealthy+ Only</option>
+                                    <option value="moderate">Moderate+ Only</option>
+                                    <option value="good">Good Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="map-legend-panel">
+                        <div class="legend-header">
+                            <h4>AQI Legend</h4>
+                            <button class="legend-toggle btn--sm" id="legendToggle">−</button>
+                        </div>
+                        <div class="legend-content" id="legendContent">
+                            <div class="legend-items">
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #00e400;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Good</span>
+                                        <span class="legend-range">0-50</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #ffff00;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Moderate</span>
+                                        <span class="legend-range">51-100</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #ff7e00;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Unhealthy for Sensitive</span>
+                                        <span class="legend-range">101-150</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #ff0000;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Unhealthy</span>
+                                        <span class="legend-range">151-200</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #8f3f97;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Very Unhealthy</span>
+                                        <span class="legend-range">201-300</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker" style="background-color: #7e0023;"></div>
+                                    <div class="legend-info">
+                                        <span class="legend-label">Hazardous</span>
+                                        <span class="legend-range">301+</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="legend-footer">
+                                <small>Click markers for detailed information</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Health Recommendations Section -->
+            <section class="section section--recommendations hidden" id="recommendationsSection">
+                <h2>Health Recommendations</h2>
+                <div class="recommendations-content">
+                    <div class="health-alerts">
+                        <div class="alert-card" id="generalAlert">
+                            <h3>General Recommendations</h3>
+                            <p id="generalRecommendation">Please select a location to get recommendations.</p>
+                        </div>
+                        <div class="alert-card" id="sensitiveAlert">
+                            <h3>For Sensitive Groups</h3>
+                            <p id="sensitiveRecommendation">Please select a location to get recommendations.</p>
+                        </div>
+                        <div class="alert-card" id="exerciseAlert">
+                            <h3>Exercise Recommendations</h3>
+                            <p id="exerciseRecommendation">Please select a location to get recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="health-profile-summary" id="healthProfileSummary">
+                        <h3>Your Health Profile</h3>
+                        <p>Complete your health profile to get personalized recommendations.</p>
+                        <button class="btn btn--secondary" id="editProfileBtn">Edit Profile</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- User Status -->
+    <div class="user-status">
+        <span id="userWelcome" class="hidden">Welcome back!</span>
+        <button class="btn btn--outline btn--sm" id="logoutBtn" style="display: none;">Logout</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
